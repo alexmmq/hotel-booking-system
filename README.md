@@ -71,7 +71,7 @@ JWT и безопасность
 Время жизни: 1 час
 JWT содержит claim roles: ["USER"] или ["ADMIN"]
 Каждый сервис валидирует JWT самостоятельно
-Internal эндпойнты Hotel Service не публикуются через Gateway
+Internal эндпойнты, Hotel Service не публикуются через Gateway
 
 ### Запуск без Docker (локально)
 Порядок запуска сервисов
