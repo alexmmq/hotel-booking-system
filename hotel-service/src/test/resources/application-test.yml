@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:hoteltest;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+security:
+  jwt:
+    secret: "TEST_SECRET_TEST_SECRET_TEST_SECRET_123456"
