@@ -22,12 +22,11 @@ spring:
 
 security:
   jwt:
-    secret: "CHANGE_ME_SUPER_SECRET_32+_CHARS_MINIMUM"
-    ttl-seconds: 3600
+    secret: ${SECURITY_JWT_SECRET:CHANGE_ME_SUPER_SECRET_32+_CHARS_MINIMUM}
+    ttl-seconds: ${SECURITY_JWT_TTL_SECONDS:3600}
 
 hotel:
-  # PROD: вызываем через Eureka по serviceId
-  base-url: "http://hotel-service"
+  base-url: ${HOTEL_BASE_URL:http://hotel-service}
 
 resilience4j:
   retry:
@@ -45,7 +44,7 @@ resilience4j:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka}
 
 logging:
   level:

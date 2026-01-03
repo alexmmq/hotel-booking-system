@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:bookingtest;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+security:
+  jwt:
+    secret: "TEST_SECRET_TEST_SECRET_TEST_SECRET_123456"
+    ttl-seconds: 3600
+
+# В тесте мы не идём в Eureka
+hotel:
+  base-url: "http://localhost:9561"

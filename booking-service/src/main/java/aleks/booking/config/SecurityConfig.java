@@ -9,6 +9,7 @@ import org.springframework.security.authentication.*;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -63,14 +64,16 @@ public class SecurityConfig {
         JwtAuthenticationConverter c = new JwtAuthenticationConverter();
         c.setJwtGrantedAuthoritiesConverter(jwt -> {
             Object roles = jwt.getClaims().get("roles");
+
             if (roles instanceof List<?> list) {
                 return list.stream()
                         .filter(String.class::isInstance)
                         .map(String.class::cast)
-                        .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                        .map(r -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + r))
                         .toList();
             }
-            return List.of();
+
+            return List.<GrantedAuthority>of();
         });
         return c;
     }
