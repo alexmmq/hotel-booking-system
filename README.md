@@ -1,44 +1,102 @@
-## Run order
+# Hotel Booking System (микросервисная архитектура)
 
-1) Eureka:
-    - cd eureka-server
-    - mvn spring-boot:run
+Учебный проект микросервисной системы бронирования отелей на **Spring Boot / Spring Cloud**  
+с **JWT-аутентификацией**, **Service Discovery**, **API Gateway** и управляемой согласованностью
+между сервисами.
 
-2) Hotel Service:
-    - cd hotel-service
-    - mvn spring-boot:run
+---
 
-3) Booking Service:
-    - cd booking-service
-    - mvn spring-boot:run
+## Состав системы
 
-4) Gateway:
-    - cd api-gateway
-    - mvn spring-boot:run
+Проект состоит из следующих микросервисов:
 
-Gateway: http://localhost:8080
-Eureka:  http://localhost:8761
+- **eureka-server** — сервис регистрации и обнаружения (Service Discovery)
+- **api-gateway** — единая точка входа (Spring Cloud Gateway)
+- **hotel-service** — управление отелями и номерами, проверка доступности
+- **booking-service** — регистрация пользователей, JWT-аутентификация, бронирования
 
-Swagger:
-- Booking: http://localhost:8082/swagger-ui.html
-- Hotel:   http://localhost:8081/swagger-ui.html
+Все сервисы:
+- самостоятельные Spring Boot приложения
+- используют in-memory базу **H2**
+- валидируют JWT как **Resource Server**
 
-## Quick test (manual)
+---
 
-1) Register user:
-   POST http://localhost:8080/api/user/register
-   {
-   "username": "user1",
-   "password": "pass"
-   }
+## Архитектура (кратко)
 
-2) Use token, create booking:
-   POST http://localhost:8080/api/booking
-   Authorization: Bearer <token>
-   {
-   "requestId": "req-1",
-   "autoSelect": false,
-   "roomId": 1,
-   "startDate": "2026-01-10",
-   "endDate": "2026-01-12"
-   }
+- Вход всех клиентских запросов осуществляется через **API Gateway**
+- Gateway маршрутизирует запросы в нужные сервисы
+- **Hotel Service** содержит *internal* эндпойнты, недоступные через Gateway
+- **Booking Service** при создании бронирования:
+   1. создаёт бронирование со статусом `PENDING`
+   2. вызывает `hotel-service` для подтверждения доступности номера
+   3. при успехе → `CONFIRMED`
+   4. при ошибке или таймауте → `CANCELLED` + компенсация (`release`)
+- Идемпотентность обеспечивается параметром `requestId`
+- Защита от гонок данных — пессимистическая блокировка номера
+
+---
+
+## Запуск через Docker (рекомендуется)
+
+### Требования
+- Docker
+- Docker Compose (v2)
+
+### Сборка и запуск всех сервисов
+```docker compose up --build```
+
+### Доступные адреса
+Eureka - http://localhost:8761
+API Gateway - http://localhost:8080
+Swagger Hotel Service - http://localhost:8081/swagger-ui.html
+Swagger Booking Service - http://localhost:8082/swagger-ui.html
+
+### Роли и доступ
+
+USER
+- просмотр отелей и номеров
+- создание бронирований
+- просмотр своей истории бронирований
+- отмена своих бронирований
+
+ADMIN
+- CRUD пользователей
+- CRUD отелей
+- CRUD номеров
+- просмотр статистики
+
+JWT и безопасность
+
+Тип токена: HS256
+Время жизни: 1 час
+JWT содержит claim roles: ["USER"] или ["ADMIN"]
+Каждый сервис валидирует JWT самостоятельно
+Internal эндпойнты Hotel Service не публикуются через Gateway
+
+### Запуск без Docker (локально)
+Порядок запуска сервисов
+1) Eureka Server
+2) Hotel Service
+3) Booking Service
+4) API Gateway
+
+```
+mvn -pl eureka-server spring-boot:run
+mvn -pl hotel-service spring-boot:run
+mvn -pl booking-service spring-boot:run
+mvn -pl api-gateway spring-boot:run
+```
+
+Тестирование
+
+В проекте реализованы тесты:
+Hotel Service 
+- проверка пересечения дат
+- идемпотентность confirm / release
+
+Booking Service
+- успешное бронирование
+- таймаут и компенсация
+- повторная доставка запроса (requestId)
+- интеграционные тесты с WireMock
