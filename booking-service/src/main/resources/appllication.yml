@@ -1,0 +1,52 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: booking-service
+
+  datasource:
+    url: jdbc:h2:mem:bookingdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+
+security:
+  jwt:
+    secret: "CHANGE_ME_SUPER_SECRET_32+_CHARS_MINIMUM"
+    ttl-seconds: 3600
+
+hotel:
+  # PROD: вызываем через Eureka по serviceId
+  base-url: "http://hotel-service"
+
+resilience4j:
+  retry:
+    instances:
+      hotelConfirm:
+        max-attempts: 3
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+  timelimiter:
+    instances:
+      hotelConfirm:
+        timeout-duration: 800ms
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+logging:
+  level:
+    org.springframework.security: INFO
